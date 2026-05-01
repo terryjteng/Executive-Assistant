@@ -1,5 +1,16 @@
 import { useState, useRef } from 'react';
 
+type SpeechRecognitionCtor = new () => {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (e: { results: { [i: number]: { [j: number]: { transcript: string } } } }) => void;
+  onend: () => void;
+  onerror: () => void;
+  start: () => void;
+  stop: () => void;
+};
+
 type Props = {
   onTranscript: (text: string) => void;
   title?: string;
@@ -7,10 +18,11 @@ type Props = {
 
 export default function MicButton({ onTranscript, title = 'Speak to fill' }: Props) {
   const [listening, setListening] = useState(false);
-  const recRef = useRef<SpeechRecognition | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recRef = useRef<any>(null);
 
-  const SR = (window as unknown as { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition
-    ?? (window as unknown as { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+  const win = window as unknown as { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor };
+  const SR = win.SpeechRecognition ?? win.webkitSpeechRecognition;
 
   if (!SR) return null;
 

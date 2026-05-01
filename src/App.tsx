@@ -3,9 +3,11 @@ import type { AreaTag, Priority, Status, ActionItem } from './actionSchema';
 import { AREA_META } from './actionSchema';
 import { useStudioActions } from './useStudioActions';
 import type { NewAction } from './useStudioActions';
+import { useAgent } from './useAgent';
 import ActionCard from './components/ActionCard';
 import AddEditModal from './components/AddEditModal';
 import MeetingsSection from './components/MeetingsSection';
+import AgentPanel from './components/AgentPanel';
 
 type Tab = 'actions' | 'meetings';
 
@@ -18,21 +20,23 @@ type Filters = {
 const EMPTY_FILTERS: Filters = { areaTag: '', priority: '', status: '' };
 
 export default function App() {
-  const {
-    actions,
-    summary,
-    addAction,
-    updateAction,
-    cycleStatus,
-    removeAction,
-    downloadJSON,
-    importJSON,
-  } = useStudioActions();
+  const studio = useStudioActions();
+  const { actions, summary, addAction, updateAction, cycleStatus, removeAction, downloadJSON, importJSON } = studio;
+
+  const agent = useAgent({
+    actions: studio.actions,
+    addAction: studio.addAction,
+    addActions: studio.addActions,
+    updateAction: studio.updateAction,
+    removeAction: studio.removeAction,
+    filterBy: studio.filterBy,
+  });
 
   const [tab, setTab] = useState<Tab>('actions');
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [showModal, setShowModal] = useState(false);
   const [editingAction, setEditingAction] = useState<ActionItem | null>(null);
+  const [agentOpen, setAgentOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return actions.filter(a => {
@@ -123,6 +127,20 @@ export default function App() {
               <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Action</button>
             </div>
           )}
+          <button
+            className={`agent-toggle-btn${agentOpen ? ' agent-toggle-btn-active' : ''}`}
+            onClick={() => setAgentOpen(o => !o)}
+            title="Open AI assistant"
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <rect x="1" y="3" width="13" height="9" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M4 7h7M4 9.5h4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            <span>Agent</span>
+            {agent.messages.length > 0 && (
+              <span className="agent-badge">{agent.messages.filter(m => m.role === 'assistant').length}</span>
+            )}
+          </button>
         </div>
       </header>
 
@@ -205,6 +223,18 @@ export default function App() {
 
       {/* ── Meetings tab ── */}
       {tab === 'meetings' && <MeetingsSection />}
+
+      {/* ── Agent panel ── */}
+      <AgentPanel
+        open={agentOpen}
+        onClose={() => setAgentOpen(false)}
+        apiKey={agent.apiKey}
+        onSaveApiKey={agent.saveApiKey}
+        messages={agent.messages}
+        isLoading={agent.isLoading}
+        onSend={agent.sendMessage}
+        onClear={agent.clearChat}
+      />
 
       {/* ── Modal ── */}
       {showModal && (
