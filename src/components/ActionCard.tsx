@@ -1,5 +1,5 @@
 import type { ActionItem } from '../actionSchema';
-import { AREA_META, SYNC_META } from '../actionSchema';
+import { AREA_META } from '../actionSchema';
 
 type Props = {
   action: ActionItem;
@@ -32,7 +32,6 @@ function isOverdue(dateStr: string, isDone: boolean): boolean {
 
 export default function ActionCard({ action, onCycleStatus, onEdit, onRemove }: Props) {
   const areaMeta = AREA_META[action.areaTag];
-  const syncMeta = SYNC_META[action.sourceSync];
   const isDone = action.status === 'done';
   const overdue = isOverdue(action.dueDate, isDone);
 
@@ -65,9 +64,6 @@ export default function ActionCard({ action, onCycleStatus, onEdit, onRemove }: 
           )}
           <span className="tag" style={{ color: areaMeta.color, background: areaMeta.bg }}>
             {areaMeta.label}
-          </span>
-          <span className="tag" style={{ color: syncMeta.color, background: syncMeta.bg }}>
-            {syncMeta.short}
           </span>
           {action.priority !== 'normal' && (
             <span className={`priority-badge priority-${action.priority}`}>

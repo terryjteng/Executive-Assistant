@@ -1,12 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { ActionItem, AreaTag, SyncType, Priority, Status } from './actionSchema';
+import type { ActionItem, AreaTag, Priority, Status } from './actionSchema';
 
 export type NewAction = Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'status'> & {
   status?: Status;
 };
 
 type FilterOptions = {
-  sourceSync?: SyncType;
   areaTag?: AreaTag;
   priority?: Priority;
   status?: Status;
@@ -90,7 +89,6 @@ export function useStudioActions() {
 
   const filterBy = useCallback((opts: FilterOptions): ActionItem[] => {
     return actions.filter(a => {
-      if (opts.sourceSync && a.sourceSync !== opts.sourceSync) return false;
       if (opts.areaTag && a.areaTag !== opts.areaTag) return false;
       if (opts.priority && a.priority !== opts.priority) return false;
       if (opts.status && a.status !== opts.status) return false;
@@ -110,7 +108,7 @@ export function useStudioActions() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `studio-sync-actions-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `ea-actions-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, [exportJSON]);

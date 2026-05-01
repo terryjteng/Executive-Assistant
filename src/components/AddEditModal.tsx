@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import type { ActionItem, AreaTag, SyncType, Priority, Status } from '../actionSchema';
+import type { ActionItem, AreaTag, Priority, Status } from '../actionSchema';
 import { AREA_META } from '../actionSchema';
 import type { NewAction } from '../useStudioActions';
+import MicButton from './MicButton';
 
 type Props = {
   action: ActionItem | null;
@@ -14,16 +15,17 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
     task: action?.task ?? '',
     owner: action?.owner ?? '',
     dueDate: action?.dueDate ?? '',
-    sourceSync: action?.sourceSync ?? 'Studio Sync',
     areaTag: action?.areaTag ?? 'overall',
     priority: action?.priority ?? 'normal',
     status: action?.status ?? 'open',
-    sessionDate: action?.sessionDate ?? '',
     notes: action?.notes ?? '',
   });
 
   const set = <K extends keyof NewAction>(key: K, value: NewAction[K]) =>
     setForm(f => ({ ...f, [key]: value }));
+
+  const append = (key: 'task' | 'notes', text: string) =>
+    setForm(f => ({ ...f, [key]: f[key] ? `${f[key]} ${text}` : text }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +42,11 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          <label className="form-group">
-            <span>Task *</span>
+          <div className="form-group">
+            <div className="form-label-row">
+              <span>Task *</span>
+              <MicButton onTranscript={text => append('task', text)} title="Speak task" />
+            </div>
             <textarea
               className="form-input form-textarea"
               value={form.task}
@@ -50,7 +55,7 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
               autoFocus
               required
             />
-          </label>
+          </div>
 
           <div className="form-row">
             <label className="form-group">
@@ -75,17 +80,6 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
 
           <div className="form-row">
             <label className="form-group">
-              <span>Source</span>
-              <select
-                className="form-input"
-                value={form.sourceSync}
-                onChange={e => set('sourceSync', e.target.value as SyncType)}
-              >
-                <option value="Studio Sync">Studio Sync</option>
-                <option value="Lead Sync">Lead Sync</option>
-              </select>
-            </label>
-            <label className="form-group">
               <span>Area</span>
               <select
                 className="form-input"
@@ -97,9 +91,6 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
                 ))}
               </select>
             </label>
-          </div>
-
-          <div className="form-row">
             <label className="form-group">
               <span>Priority</span>
               <select
@@ -112,22 +103,26 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
                 <option value="decision">Decision</option>
               </select>
             </label>
-            <label className="form-group">
-              <span>Status</span>
-              <select
-                className="form-input"
-                value={form.status}
-                onChange={e => set('status', e.target.value as Status)}
-              >
-                <option value="open">Open</option>
-                <option value="in-progress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
-            </label>
           </div>
 
           <label className="form-group">
-            <span>Notes</span>
+            <span>Status</span>
+            <select
+              className="form-input"
+              value={form.status}
+              onChange={e => set('status', e.target.value as Status)}
+            >
+              <option value="open">Open</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </label>
+
+          <div className="form-group">
+            <div className="form-label-row">
+              <span>Notes</span>
+              <MicButton onTranscript={text => append('notes', text)} title="Speak notes" />
+            </div>
             <textarea
               className="form-input form-textarea"
               value={form.notes ?? ''}
@@ -135,7 +130,7 @@ export default function AddEditModal({ action, onSubmit, onClose }: Props) {
               placeholder="Optional context or links..."
               rows={2}
             />
-          </label>
+          </div>
 
           <div className="modal-footer">
             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>

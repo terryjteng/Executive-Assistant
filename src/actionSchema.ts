@@ -1,8 +1,6 @@
 // ============================================================
-// Studio Sync Hub — Action Item Schema
+// Studio EA — Action Item & Meeting Note Schema
 // ============================================================
-
-export type SyncType = 'Studio Sync' | 'Lead Sync';
 
 export type AreaTag =
   | 'overall'
@@ -21,15 +19,47 @@ export interface ActionItem {
   task: string;
   owner: string;
   dueDate: string;
-  sourceSync: SyncType;
   areaTag: AreaTag;
   priority: Priority;
   status: Status;
   createdAt: string;
   updatedAt: string;
-  sessionDate?: string;
   notes?: string;
 }
+
+// ============================================================
+// Meeting Notes
+// ============================================================
+
+export type MeetingType = 'studio-sync' | 'lead-sync' | 'team-sync';
+
+export const TEAM_META = {
+  'last-light':       { label: 'Last Light',       color: '#A32D2D', bg: '#FCEBEB' },
+  'corebound':        { label: 'Corebound',         color: '#854F0B', bg: '#FAEEDA' },
+  'big-boss-cleanup': { label: 'Big Boss Cleanup',  color: '#3B6D11', bg: '#EAF3DE' },
+} as const;
+
+export type TeamKey = keyof typeof TEAM_META;
+
+export const MEETING_META: Record<MeetingType, { label: string; short: string }> = {
+  'studio-sync': { label: 'Studio Sync', short: 'SS' },
+  'lead-sync':   { label: 'Lead Sync',   short: 'LS' },
+  'team-sync':   { label: 'Team Syncs',  short: 'TS' },
+};
+
+export interface MeetingNote {
+  id: string;
+  type: MeetingType;
+  team?: TeamKey;
+  date: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================
+// Area display metadata
+// ============================================================
 
 export const AREA_META: Record<AreaTag, { label: string; color: string; bg: string }> = {
   'overall':           { label: 'Overall Studio',    color: '#5F5E5A', bg: '#F1EFE8' },
@@ -38,9 +68,4 @@ export const AREA_META: Record<AreaTag, { label: string; color: string; bg: stri
   'last-light':        { label: 'Last Light',         color: '#A32D2D', bg: '#FCEBEB' },
   'corebound':         { label: 'Corebound',          color: '#854F0B', bg: '#FAEEDA' },
   'big-boss-cleanup':  { label: 'Big Boss Cleanup',   color: '#3B6D11', bg: '#EAF3DE' },
-};
-
-export const SYNC_META: Record<SyncType, { short: string; color: string; bg: string }> = {
-  'Studio Sync': { short: 'SS', color: '#3B6D11', bg: '#EAF3DE' },
-  'Lead Sync':   { short: 'LS', color: '#185FA5', bg: '#E6F1FB' },
 };
