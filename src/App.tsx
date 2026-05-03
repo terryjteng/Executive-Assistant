@@ -21,7 +21,7 @@ const EMPTY_FILTERS: Filters = { areaTag: '', priority: '', status: '' };
 
 export default function App() {
   const studio = useStudioActions();
-  const { actions, summary, addAction, updateAction, cycleStatus, removeAction, downloadJSON, importJSON } = studio;
+  const { actions, summary, addAction, updateAction, cycleStatus, removeAction, downloadJSON, importJSON, serverConnected } = studio;
 
   const agent = useAgent({
     actions: studio.actions,
@@ -127,6 +127,13 @@ export default function App() {
               <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Action</button>
             </div>
           )}
+          <span
+            className={`hr-sync-badge${serverConnected ? ' hr-sync-badge-on' : ''}`}
+            title={serverConnected ? 'Synced with HR Tool (localhost:3001)' : 'HR Tool server offline — using local storage'}
+          >
+            {serverConnected ? '● HR Tool' : '○ Local'}
+          </span>
+
           <button
             className={`agent-toggle-btn${agentOpen ? ' agent-toggle-btn-active' : ''}`}
             onClick={() => setAgentOpen(o => !o)}

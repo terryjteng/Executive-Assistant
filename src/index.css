@@ -1090,3 +1090,7 @@ body {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* ─── HR Tool sync badge ──────────────────────────────────── */
+.hr-sync-badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); background: var(--bg); cursor: default; }
+.hr-sync-badge-on { color: #1D9E75; border-color: #A8E6D0; background: #E1F5EE; }
