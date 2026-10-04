@@ -129,7 +129,7 @@ export default function App() {
           )}
           <span
             className={`hr-sync-badge${serverConnected ? ' hr-sync-badge-on' : ''}`}
-            title={serverConnected ? 'Synced with HR Tool (localhost:3001)' : 'HR Tool server offline — using local storage'}
+            title={serverConnected ? 'Synced with the HR Tool' : 'HR Tool server offline — using local storage'}
           >
             {serverConnected ? '● HR Tool' : '○ Local'}
           </span>
