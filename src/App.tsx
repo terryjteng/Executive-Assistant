@@ -235,8 +235,6 @@ export default function App() {
       <AgentPanel
         open={agentOpen}
         onClose={() => setAgentOpen(false)}
-        apiKey={agent.apiKey}
-        onSaveApiKey={agent.saveApiKey}
         messages={agent.messages}
         isLoading={agent.isLoading}
         onSend={agent.sendMessage}

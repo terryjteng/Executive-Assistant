@@ -130,24 +130,28 @@ type StudioActions = {
   filterBy: (opts: FilterOpts) => ActionItem[];
 };
 
-const KEY_STORAGE = 'ea_anthropic_key';
+// Requests go through this app's /api/anthropic proxy, which checks the Clerk
+// session and adds the studio API key on the server.
+const PROXY_BASE_URL = `${window.location.origin}/api/anthropic`;
+
+const authedFetch: typeof fetch = async (input, init) => {
+  const clerk = (window as unknown as { Clerk?: { session?: { getToken(): Promise<string | null> } } }).Clerk;
+  const token = await clerk?.session?.getToken();
+  const headers = new Headers(init?.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return fetch(input, { ...init, headers });
+};
 
 function uid() {
   return `m_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export function useAgent(studio: StudioActions) {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(KEY_STORAGE) ?? '');
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const historyRef = useRef<Anthropic.Messages.MessageParam[]>([]);
   const studioRef = useRef(studio);
   studioRef.current = studio;
-
-  const saveApiKey = useCallback((key: string) => {
-    localStorage.setItem(KEY_STORAGE, key);
-    setApiKey(key);
-  }, []);
 
   const clearChat = useCallback(() => {
     historyRef.current = [];
@@ -179,7 +183,7 @@ export function useAgent(studio: StudioActions) {
   }, []);
 
   const sendMessage = useCallback(async (text: string) => {
-    if (!apiKey || isLoading) return;
+    if (isLoading) return;
 
     setMessages(prev => [...prev, { id: uid(), role: 'user', content: text }]);
     const assistantId = uid();
@@ -188,7 +192,12 @@ export function useAgent(studio: StudioActions) {
 
     historyRef.current = [...historyRef.current, { role: 'user', content: text }];
 
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+    const client = new Anthropic({
+      apiKey: 'server-side',
+      baseURL: PROXY_BASE_URL,
+      fetch: authedFetch,
+      dangerouslyAllowBrowser: true,
+    });
 
     try {
       let continueLoop = true;
@@ -248,7 +257,7 @@ export function useAgent(studio: StudioActions) {
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, isLoading, executeTool]);
+  }, [isLoading, executeTool]);
 
-  return { apiKey, saveApiKey, messages, isLoading, sendMessage, clearChat };
+  return { messages, isLoading, sendMessage, clearChat };
 }

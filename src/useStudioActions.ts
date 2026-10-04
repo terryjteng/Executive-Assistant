@@ -15,7 +15,17 @@ type FilterOptions = {
 };
 
 const STORAGE_KEY = 'studio_sync_actions';
-const HR_TOOL_URL = 'http://localhost:3001';
+const HR_TOOL_URL: string = import.meta.env.VITE_HR_TOOL_URL ?? 'https://hr.kato8studiosapp.xyz';
+
+// Calls the HR Tool API with the Clerk session token (same Clerk instance across tools).
+async function hrFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const clerk = (window as unknown as { Clerk?: { session?: { getToken(): Promise<string | null> } } }).Clerk;
+  const token = await clerk?.session?.getToken();
+  return fetch(`${HR_TOOL_URL}${path}`, {
+    ...init,
+    headers: { ...(init.headers as Record<string, string>), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+}
 
 function generateId(): string {
   return `action_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -27,7 +37,7 @@ function now(): string {
 
 async function ping(): Promise<boolean> {
   try {
-    const res = await fetch(`${HR_TOOL_URL}/api/ping`, { signal: AbortSignal.timeout(2000) });
+    const res = await hrFetch(`/api/ping`, { signal: AbortSignal.timeout(8000) });
     const data = await res.json();
     return data.ok === true;
   } catch {
@@ -70,7 +80,7 @@ export function useStudioActions() {
       connectedRef.current = true;
 
       try {
-        const res = await fetch(`${HR_TOOL_URL}/api/actions`);
+        const res = await hrFetch(`/api/actions`);
         const serverActions: ActionItem[] = await res.json();
 
         if (!mounted) return;
@@ -81,7 +91,7 @@ export function useStudioActions() {
 
         if (serverActions.length === 0 && localActions.length > 0) {
           // First connect — migrate local data to server
-          await fetch(`${HR_TOOL_URL}/api/actions/batch`, {
+          await hrFetch(`/api/actions/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ actions: localActions }),
@@ -100,7 +110,7 @@ export function useStudioActions() {
     // Sync on window focus
     function onFocus() {
       if (!connectedRef.current) return;
-      fetch(`${HR_TOOL_URL}/api/actions`)
+      hrFetch(`/api/actions`)
         .then(r => r.json())
         .then((serverActions: ActionItem[]) => { if (mounted) setActions(serverActions); })
         .catch(() => {});
@@ -110,7 +120,7 @@ export function useStudioActions() {
     // Periodic sync every 15s
     const interval = setInterval(() => {
       if (!connectedRef.current || !mounted) return;
-      fetch(`${HR_TOOL_URL}/api/actions`)
+      hrFetch(`/api/actions`)
         .then(r => r.json())
         .then((serverActions: ActionItem[]) => { if (mounted) setActions(serverActions); })
         .catch(() => {});
@@ -135,7 +145,7 @@ export function useStudioActions() {
     };
     setActions(prev => [newItem, ...prev]);
     if (connectedRef.current) {
-      fetch(`${HR_TOOL_URL}/api/actions`, {
+      hrFetch(`/api/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newItem),
@@ -154,7 +164,7 @@ export function useStudioActions() {
     }));
     setActions(prev => [...newItems, ...prev]);
     if (connectedRef.current) {
-      fetch(`${HR_TOOL_URL}/api/actions/batch`, {
+      hrFetch(`/api/actions/batch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actions: newItems }),
@@ -168,7 +178,7 @@ export function useStudioActions() {
       prev.map(a => a.id === id ? { ...a, ...patch, updatedAt: now() } : a)
     );
     if (connectedRef.current) {
-      fetch(`${HR_TOOL_URL}/api/actions/${id}`, {
+      hrFetch(`/api/actions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -188,7 +198,7 @@ export function useStudioActions() {
       })
     );
     if (connectedRef.current) {
-      fetch(`${HR_TOOL_URL}/api/actions/${id}`, {
+      hrFetch(`/api/actions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus }),
@@ -199,7 +209,7 @@ export function useStudioActions() {
   const removeAction = useCallback((id: string) => {
     setActions(prev => prev.filter(a => a.id !== id));
     if (connectedRef.current) {
-      fetch(`${HR_TOOL_URL}/api/actions/${id}`, { method: 'DELETE' }).catch(console.warn);
+      hrFetch(`/api/actions/${id}`, { method: 'DELETE' }).catch(console.warn);
     }
   }, []);
 
@@ -236,7 +246,7 @@ export function useStudioActions() {
         const existingIds = new Set(prev.map(a => a.id));
         const newOnes = imported.filter(a => !existingIds.has(a.id));
         if (connectedRef.current && newOnes.length > 0) {
-          fetch(`${HR_TOOL_URL}/api/actions/batch`, {
+          hrFetch(`/api/actions/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ actions: newOnes }),
